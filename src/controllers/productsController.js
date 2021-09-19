@@ -1,6 +1,10 @@
 const { render } = require('ejs');
 const jsonTable = require('../database/jsonTable');
 let productsModel = jsonTable('productsDataBase');
+const path = require('path')
+const fs = require('fs')
+
+
 
 const controller = {
     // Root - Show all products
@@ -22,6 +26,16 @@ const controller = {
 
     // Create -  Method to store
     store: (req, res) => {
+
+        if (!req.file) {
+            res.render('product-create-form');
+            return;
+        }
+        req.body = {
+            ...req.body,
+            image: req.file.filename
+        }
+
         let id = productsModel.create(req.body);
 
         res.redirect('/products/detail/' + id)
@@ -41,7 +55,15 @@ const controller = {
 
     // Delete - Delete one product from DB
     destroy: (req, res) => {
+        let product = productsModel.find(req.params.id);
+
+        let imagePath = path.join(__dirname, '../../public/images/products/' + product.image);
         productsModel.delete(req.params.id);
+
+        if (fs.existsSync(imagePath)) {
+            fs.unlinkSync(imagePath)
+        }
+
         res.redirect('/')
     }
 };
